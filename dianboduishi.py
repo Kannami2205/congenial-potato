@@ -5,11 +5,11 @@ import datetime
 import math
 
 def dropandfill(l, s):
-    return '0' * (l - len(s[2:])) + s[2:]  # 用0补位
+    return '0' * (l - len(s[2:])) + s[2:]  # Replace with 0
 
 def time2wwvb(date_time, dt=datetime.timedelta(0)):
     '''
-    将时间转换成WWVB时码。
+    Convert local time to WWVB
     '''
 def generate_wwvb_code(date_time):
     year_code = f'{date_time.year % 100:02b}'.zfill(8)
@@ -17,28 +17,28 @@ def generate_wwvb_code(date_time):
     hour_code = f'{date_time.hour:04b}'
     minute_code = f'{date_time.minute:06b}'
 
-    # WWVB的时间格式包括年、天、小时、分钟
+    # WWVBformat
     wwvb_time_format = year_code + day_code + hour_code + minute_code
 
-    # 生成WWVB的标记位和时间位
+    # Generate WWVBtime bit
     wwvb_code = '2' + '0' * 9 + wwvb_time_format + '0' * (60 - len(wwvb_time_format) - 10)
 
     return wwvb_code 
 
-dt = datetime.timedelta(hours=1)  # 偏移时间
-samp_rate = 60000  # 将samp_rate修改为60 kHz
-freq = 6000 * 2  # 适当调整频率
-ttime = 60 # 适当调整采样时间
+dt = datetime.timedelta(hours=1)  # shift rate 
+samp_rate = 60000  # WWVB samp_rate is 60 kHz
+freq = 6000 * 2  # 5 division frequency
+ttime = 60 # WWVB 1 frame = 60 sec 
 SAMPLE_LEN = samp_rate * ttime  # 60 seconds of cosine
 value = ampl = 32725
 div = samp_rate / freq / 2
 
-# 打开声音输出流
+# audio output 
 p = pyaudio.PyAudio()
 stream = p.open(format=8, channels=1, rate=samp_rate, output=True)
 
 while True:
-    current_time = datetime.datetime.utcnow()  # WWVB使用UTC时间
+    current_time = datetime.datetime.utcnow()  # WWVB use utc time 
     print(current_time)
     wwvb_code = generate_wwvb_code(current_time)
 
@@ -46,12 +46,12 @@ while True:
         sec = (i // samp_rate) % 60
         bit = wwvb_code[sec]
 
-        if bit == '2':  # 标记位，0.8秒的脉冲
+        if bit == '2':  # mark bit for 0.8 sec pulse 
             pulse_duration = 0.8 * samp_rate
-        elif bit == '1':  # 1位，0.5秒的脉冲
+        elif bit == '1':  # 1 bit ，0.5 sec pulse 
             pulse_duration = 0.5 * samp_rate
-        else:  # 0位，0.2秒的脉冲
-            pulse_duration = 0.2 * samp_rate
+        else:  # 0 bit ，0.2 sec pulse 
+             pulse_duration = 0.2 * samp_rate
 
         if i % samp_rate < pulse_duration:
             value = int(ampl * math.cos(math.pi / float(div) * float(i)))
